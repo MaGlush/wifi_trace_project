@@ -28,10 +28,10 @@ BRIDGE_LIBRARY_DIR = bridge/lib
 CONFIG_DIR = bridge/config
 
 # Which libraries to prepare for usage: targets must be defined in BRIDGE_MAKE.
-BRIDGE_TARGETS = glm easybmp argvparser assimp
+BRIDGE_TARGETS = glm easybmp assimp
 
 # Link libraries gcc flag: library will be searched with prefix "lib".
-LDFLAGS = -leasybmp -largvparser -lassimp
+LDFLAGS = -leasybmp -lassimp
 
 # Add headers dirs to gcc search path
 CXXFLAGS += -I $(INCLUDE_DIR) -I $(BRIDGE_INCLUDE_DIR)

@@ -8,7 +8,7 @@ INCLUDE_DIR = include
 LIBRARY_DIR = lib
 EXTERNALS_BASEDIR = ../externals
 
-TARGET = glm easybmp argvparser assimp
+TARGET = glm easybmp assimp
 .DEFAULT_GOAL := $(TARGET)
 
 # Avoid useless remaking of this Makefile.
@@ -98,4 +98,4 @@ $(EASYBMP_LIBRARY):
 clean:
 	rm -rf $(wildcard $(INCLUDE_DIR)/*) $(wildcard $(LIBRARY_DIR)/*)
 	make -C $(EASYBMP_LOCATION) -f $(EASYBMP_MAKEFILE) $@
-	make -C $(ARGVPARSER_LOCATION) -f $(ARGVPARSER_MAKEFILE) $@
+	# make -C $(ARGVPARSER_LOCATION) -f $(ARGVPARSER_MAKEFILE) $@
