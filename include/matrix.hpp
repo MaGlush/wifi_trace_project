@@ -39,8 +39,8 @@ template<typename ValueT>
 Matrix<ValueT> Matrix<ValueT>::deep_copy() const
 {
 	Matrix<ValueT> tmp(n_rows, n_cols);
-	for (uint i = 0; i < n_rows; ++i)
-		for (uint j = 0; j < n_cols; ++j)
+	for (uint i = 0; i < n_rows; i++)
+		for (uint j = 0; j < n_cols; j++)
 			tmp(i, j) = (*this)(i, j);
 	return tmp;
 }
@@ -202,8 +202,8 @@ Matrix<ValueT>::unary_map(const UnaryMatrixOperator &op) const
     const auto end_j = n_cols - radius;
 
 
-    for (uint i = start_i; i < end_i; ++i) {
-        for (uint j = start_j; j < end_j; ++j) {
+    for (uint i = start_i; i < end_i; i++) {
+        for (uint j = start_j; j < end_j; j++) {
             auto neighbourhood = submatrix(i - radius, j - radius, size, size);
             // tmp(i, j) = op(neighbourhood);
         }
@@ -227,8 +227,8 @@ Matrix<typename std::result_of<UnaryMatrixOperator(Matrix<ValueT>)>::type>
 
 	Matrix<ValueT> extra_image = extra_borders(kernel_vert_radius, kernel_hor_radius);
 
-	for (uint i = 0; i < n_rows; ++i) {
-		for (uint j = 0; j < n_cols; ++j) {
+	for (uint i = 0; i < n_rows; i++) {
+		for (uint j = 0; j < n_cols; j++) {
 			auto neighbourhood = extra_image.submatrix(i, j, 2 * kernel_vert_radius + 1, 2 * kernel_hor_radius + 1);
 			tmp(i, j) = op(neighbourhood);
 		}

@@ -1,3 +1,5 @@
+#include "config_setup.hpp"
+
 // Read an INI file into easy-to-access name/value pairs.
 
 // inih and INIReader are released under the New BSD license (see LICENSE.txt).
@@ -55,6 +57,8 @@ home page for more info:
 https://github.com/benhoyt/inih
 
 */
+
+#pragma once
 
 /* Make this header file easier to include in C++ code */
 #ifdef __cplusplus
@@ -250,6 +254,8 @@ https://github.com/benhoyt/inih
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+
+#include "ini.h"
 
 #if !INI_USE_STACK
 #include <stdlib.h>

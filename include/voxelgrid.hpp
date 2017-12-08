@@ -17,8 +17,8 @@ public:
 
     SVoxel(vec3 position = vec3(0.0f, 0.0f, 0.0f),
           float side = 5.0f,
-          vec3 color = vec3(1.f, 1.f, 1.f),
-          float value = 0.f); 	
+          vec3 color = vec3(1.0f, 1.0f, 1.0f),
+          float value = 0.0f); 	
 };
 
 class CVoxelGrid

@@ -1,36 +1,5 @@
 #include "scene.hpp"
 
-CCamera::CCamera(vec3 Pos, string Orient, float FOV){
-    SetDirection(Pos, Orient, FOV);
-}
-
-void CCamera::SetDirection(const vec3 Pos, const string Orient, float FOV){
-    position = Pos;
-    orientation = Orient;
-    fov = FOV;
-    if(orientation == "top"){
-        left = vec3(0.0f, 0.0f, -1.0f);
-        right = vec3(1.0f, 0.0f, 0.0f);
-    }else if(orientation == "leftbot"){
-        // left = vec3();
-        // right = vec3();                                              /*#ASU NEED FILL, GEOMETRY*/
-    }else if(orientation == "rightbot"){
-        // left = vec3();
-        // right = vec3();
-    }else if(orientation == "lefttop"){
-        // left = vec3();
-        // right = vec3();
-    }else if(orientation == "righttop"){
-        // left = vec3();
-        // right = vec3();
-    }
-    front = glm::normalize(glm::cross(left, right)); // vectors multiply, cross product
-}
-
-tuple<vec3,vec3,vec3> CCamera::GetDirection() const{
-    return std::make_tuple(left,right,front);
-}
-
 vec3 SLight::PhongShade(const vec3& ambi_const, // ambient reflection constant
                         const vec3& diff_const, // diffuse reflection constant
                         const vec3& spec_const, // specular reflection constant
@@ -54,11 +23,11 @@ vec3 SLight::PhongShade(const vec3& ambi_const, // ambient reflection constant
     float area = 4*PI*radius*radius*1e-5f;
     vec3 color = intensity / area;
 
-    if(dot_light_normal < 0.f) // no light
-        return vec3(0.f, 0.f, 0.f);
+    if(dot_light_normal < 0.0f) // no light
+        return vec3(0.0f, 0.0f, 0.0f);
 
         // return diffuse 
-    if(dot_reflect_view < 0.f) // no reflections 
+    if(dot_reflect_view < 0.0f) // no reflections 
         return color * ( ambi_const + diff_const * dot_light_normal );
 
         // return ambient + diffuse + specular
@@ -94,12 +63,12 @@ bool CModel::Load(const char* filename){
 
 void CModel::CalcNode(aiNode *node, const aiScene *scene){
 
-    for(uint i = 0; i < node->mNumMeshes; ++i){
+    for(uint i = 0; i < node->mNumMeshes; i++){
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]]; 
         meshes.push_back(ConvertMesh(mesh));			
     }
         // same for children
-    for(uint i = 0; i < node->mNumChildren; ++i){
+    for(uint i = 0; i < node->mNumChildren; i++){
         CalcNode(node->mChildren[i], scene);
     }
 }  
@@ -108,7 +77,7 @@ SMesh CModel::ConvertMesh(aiMesh *mesh){
     vector<vec3> vertices;
     vector<vec3> normals;
 
-    for(uint i = 0; i < mesh->mNumVertices; ++i){
+    for(uint i = 0; i < mesh->mNumVertices; i++){
         vec3 vertex = ConvertVec(mesh->mVertices[i]) + position;
         vertices.push_back(vertex);
         vec3 normal = ConvertVec(mesh->mNormals[i]);
@@ -131,13 +100,13 @@ void CModel::Init(){
     vec3* vec_ptr;
     vec3 normal;
 
-	for(uint i = 0; i < meshes.size(); ++i){
+	for(uint i = 0; i < meshes.size(); i++){
 		for(uint j = 0; j < meshes[i].vertices.size(); j+=3){
             normal = meshes[i].normals[j];
 			vec_ptr = &meshes[i].vertices[j];
             SetBound(vec_ptr);  
-			// STriangle temp(vec_ptr[0], vec_ptr[1], vec_ptr[2], normal);
-			// triangles.push_back(temp);
+			STriangle temp(vec_ptr[0], vec_ptr[1], vec_ptr[2], normal);
+			triangles.push_back(temp);
 		}
 	}
     left_top_near = vec3(left, top, near);
@@ -146,7 +115,7 @@ void CModel::Init(){
 
 void CModel::SetBound(vec3* v_ptr){
 
-    for(uint i = 0; i < 3; ++i){
+    for(uint i = 0; i < 3; i++){
         vec3 v = *(v_ptr+i);
 
         left = v.x < left ? v.x : left;

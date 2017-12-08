@@ -1,11 +1,14 @@
 #include "tracing.hpp"
 #include "postprocessing.hpp"
+#include "geometry.hpp"
 
-CTracer::CTracer(const CModel& loaded_model, const CVoxelGrid& vox_grid):
-	model (loaded_model),
-    vox_grid (vox_grid)
-{}
-
+CTracer::CTracer(const CModel& loaded_model, const CVoxelGrid& grid):
+    model (loaded_model),
+    vox_grid (grid)
+{
+    for(uint i = 0; i < model.triangles.size(); i++)
+        objects.push_back(&(model.triangles[i]));
+}
 void CTracer::SaveImageToFile(const Image &img, const char *path){
     BMP out;
     out.SetSize(img.n_cols, img.n_rows);
@@ -13,8 +16,8 @@ void CTracer::SaveImageToFile(const Image &img, const char *path){
     uint r, g, b;
     RGBApixel p;
     p.Alpha = 255;
-    for (uint i = 0; i < img.n_rows; ++i) {
-        for (uint j = 0; j < img.n_cols; ++j) {
+    for (uint i = 0; i < img.n_rows; i++) {
+        for (uint j = 0; j < img.n_cols; j++) {
             std::tie(r, g, b) = img(i, j);
             p.Red = r; p.Green = g; p.Blue = b;
             out.SetPixel(j, i, p);
@@ -33,8 +36,8 @@ Image CTracer::LoadImageFromFile(const char *path){
 
     Image res(in.TellHeight(), in.TellWidth());
 
-    for (uint i = 0; i < res.n_rows; ++i) {
-        for (uint j = 0; j < res.n_cols; ++j) {
+    for (uint i = 0; i < res.n_rows; i++) {
+        for (uint j = 0; j < res.n_cols; j++) {
             RGBApixel *p = in(j, i);
             res(i, j) = std::make_tuple(p->Red, p->Green, p->Blue);
         }
@@ -43,13 +46,14 @@ Image CTracer::LoadImageFromFile(const char *path){
     return res;
 }
 
-void CTracer::PlaceRouter(vec3 position){
-    SWifiRouter router();
+void CTracer::PlaceRouter(SWifiRouter& router){
+    router.FillGrid(objects, vox_grid, 80000);
+    vox_grid.GridFilter();
     objects.push_back(&router);
 }
 
-SRay CTracer::BuildRay(float x, float y){
-    return SRay::BuildRay(x, y);
+SRay CTracer::BuildRay(float x, float y, CCamera& eye){
+    return SRay::BuildRay(x, y, eye);
 }
 
 std::tuple<uint,uint,uint> CTracer::vec3_to_color(vec3 vector){
@@ -59,35 +63,35 @@ std::tuple<uint,uint,uint> CTracer::vec3_to_color(vec3 vector){
     return std::make_tuple(x, y, z);
 }
 
-vec3 CTracer::RayMarcher(const SRay& ray, vec3 color, float t_closest){
+vec3 CTracer::RayMarcher(const SRay& ray, vec3 color){
     float depth = 0.0f;
     float step = 0.005;
     int idx;
     int p_idx;
     bool first = true;
     float alpha = 0.04f;
-    vec3 routerColor = vec3(0.0f,0.0f,0.0f);;
-    for(int i = 0; i < MAX_MARCH_STEPS; ++i){
-        vec3 point = ray.origin + 
-                     vec3(ray.direction.x*depth, \
-                          ray.direction.y*depth, \
-                          ray.direction.z*depth);
+    vec3 routerColor = vec3(0.0f,0.0f,0.0f);
+    for(int i = 0; i < MAX_MARCH_STEPS; i++){
+        vec3 p = ray.origin + 
+                 vec3(ray.direction.x*depth, \
+                      ray.direction.y*depth, \
+                      ray.direction.z*depth);
         depth+=step;
         if(first){
-            idx = vox_grid.GetVoxel(point);
+            idx = vox_grid.GetVoxel(p);
             first = false;
         }
         else{
             p_idx = idx;
-            idx = vox_grid.GetVoxel(point);
+            idx = vox_grid.GetVoxel(p);
             if(idx==p_idx){
                 continue;
             }
         }
         if(idx>0){
             float value = vox_grid.voxels[idx].value;
-            routerColor += vec3(value/7.f, value/30.f, value/100.f);
-            routerColor = min(vec3(255.f,200.f,100.f), routerColor);
+            routerColor += vec3(value/30.0f, value/7.0f, value/100.0f);
+            routerColor = min(vec3(255.0f,200.0f,100.0f), routerColor);
 
             color =  color * (1 - alpha) + routerColor*alpha;
         }
@@ -101,71 +105,64 @@ vec3 CTracer::RayMarcher(const SRay& ray, vec3 color, float t_closest){
 }
 
 tuple3uint CTracer::RayTracer(const SRay& ray){
-    float t0, t1, t_closest = std::numeric_limits<float>::max();
-    int i_closest; // index of the closest intersect object
-    bool isInter = false;
-    vec3 res_color = vec3(0.f, 0.f, 0.f);
-    for(size_t i = 0; i < objects.size(); ++i){
+    float t, t_near = std::numeric_limits<float>::max();
+    int index_near; // index of the closest intersected object
+    bool intersected = false;
+    vec3 res_color = vec3(0.0f, 0.0f, 0.0f);
+    for(size_t i = 0; i < objects.size(); i++){
             //check intersection
-        if(objects[i]->intersect(ray, t0, t1))
-        {    
-            if (t0 < 0) t0 = t1;
-            if (t0 < t_closest) 
-            {
-                isInter = true;
-                t_closest = t0;
-                i_closest = i;
+        if(objects[i]->hit(ray, t)){    
+            if (t < t_near){
+                intersected = true;
+                t_near = t;
+                index_near = i;
             }
-
         }
     }
-    if(!isInter) return vec3_to_color(res_color); // no intersection, returns black
+    if(!intersected) return vec3_to_color(res_color); // no intersection, returns black
 
-    vec3 pHit = ray.origin + ray.direction*t_closest; // hit point 
-    vec3 nHit = objects[i_closest]->normalize(pHit); // normal at hit point
-    nHit = glm::dot(ray.direction, nHit) > 0 ? -nHit : nHit; // reverse normal if its inside 
-    pHit = pHit + nHit*1e-2f;
+    vec3 point = ray.origin + ray.direction*t_near; // hit point 
+    vec3 normal = objects[index_near]->normalize(point); // normal at hit point
+    normal = glm::dot(ray.direction, normal) > 0 ? -normal : normal; // reverse normal if its inside 
+    point = point + normal*0.01f;
    
     SRay shadow_ray;
-    for(uint k = 0; k < lights.size(); ++k){
+    for(uint k = 0; k < lights.size(); k++){
             // processing shadow parts
-        vec3 lightdir = lights[k].position - pHit;
+        vec3 lightdir = lights[k].position - point;
         lightdir = glm::normalize(lightdir);
-        shadow_ray = SRay (pHit, lightdir); 
-        bool isShadow = false;
-        for(uint i = 0; i < objects.size(); ++i)
-            if ( objects[i]->intersect(shadow_ray, t0, t1))
-            {
-                if(t0 > 0)
-                {
-                    isShadow = true; 
+        shadow_ray = SRay (point, lightdir); 
+        bool shadowed = false;
+        for(uint i = 0; i < objects.size(); i++)
+            if ( objects[i]->hit(shadow_ray, t)){
+                if(t > 0){
+                    shadowed = true; 
                     break;
                 }
             }
-        if( !isShadow ){
-            float dif = glm::dot(lightdir, nHit);
-            if(dif < 0.f) 
+        if( !shadowed ){
+            float dif = glm::dot(lightdir, normal);
+            if(dif < 0.0f) 
                 continue;
-            SRay eye(pHit, ray.origin - pHit); 
+            SRay eye(point, ray.origin - point); // #ASU here. change color calculation.
             vec3 phong_color = lights[k].PhongShade(vec3(0.1f, 0.1f, 0.1f), // ambient reflection constant
-                                                    objects[i_closest]->color*0.7f, // diffuse reflection constant
+                                                    objects[index_near]->color*0.7f, // diffuse reflection constant
                                                     vec3(0.1f, 0.1f, 0.1f), // specular reflection constant
-                                                    10.f,  // shininess constant for this material
-                                                    nHit, 
-                                                    pHit,
+                                                    10.0f,  // shininess constant for this material
+                                                    normal, 
+                                                    point,
                                                     current_camera);
-            phong_color = min(vec3(255.f, 255.f, 255.f), phong_color);
-            res_color += RayMarcher(eye, phong_color, t_closest);
+            phong_color = min(vec3(255.0f, 255.0f, 255.0f), phong_color);
+            res_color += RayMarcher(eye, phong_color);
         }
-        res_color = min(vec3(255.f, 255.f, 255.f), res_color);
+        res_color = min(vec3(255.0f, 255.0f, 255.0f), res_color);
     }
     return vec3_to_color(res_color);
 }
 
 void CTracer::RenderScene(int width, int height){
 
-    for(uint k = 0; k < cameras.size(); ++k){
-        
+    for(uint k = 0; k < cameras.size(); k++){
         current_camera = cameras[k];
         cerr << current_camera.orientation << " view rendering ...";
         
@@ -178,20 +175,20 @@ void CTracer::RenderScene(int width, int height){
         int progress = 0;
         uint i,j;
         #pragma omp parallel for private(i,j)
-        for(i = 0; i < res_image.n_rows; ++i)
-            for(j = 0; j < res_image.n_cols; ++j){	
-                SRay ray = BuildRay(j, i);
+        for(i = 0; i < res_image.n_rows; i++)
+            for(j = 0; j < res_image.n_cols; j++){	
+                SRay ray = BuildRay(j, i, current_camera);
                 res_image(i, j) = RayTracer(ray);
                     // progress bar 
                 if ( (i*height+j)%part == 0){
-                    cerr << progress << "%%\n"; 
+                    cerr << progress << "\%\n"; 
+                    #pragma omp critical
                     progress += 10;
-                    part += p10;
                 }
             }
-        cerr << " completed" << endl;
-        // res_image = postprocessing(res_image);  /* #ASU add postprocessing autocontrast from CG-1 align_project*/
-        std::string path = string("./build/bin/") + current_camera.orientation + string(".bmp");
+        cerr << "completed" << endl;
+        res_image = PostProcessing(res_image);  
+        std::string path = string("./") + current_camera.orientation + string(".bmp");
         SaveImageToFile(res_image, path.c_str());
         cerr << "Saved " << path << endl;
     }

@@ -143,8 +143,8 @@ std::ostream &operator << (std::ostream &out, const Matrix<ValueT> &m)
 		out << "empty matrix" << std::endl;
 		return out;
 	}
-	for (uint i = 0; i < m.n_rows; ++i) {
-		for (uint j = 0; j < m.n_cols; ++j) {
+	for (uint i = 0; i < m.n_rows; i++) {
+		for (uint j = 0; j < m.n_cols; j++) {
 			out << m(i, j) << " ";
 		}
 		out << std::endl;

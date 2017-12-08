@@ -1,7 +1,7 @@
 #pragma once
 
 #include "includes.hpp"
-#include "scene.hpp"
+#include "camera.hpp"
 
 struct SRay
 {
@@ -9,13 +9,11 @@ struct SRay
     vec3 direction; // Cast direction
     float power;
 	float reflect; // Reflection coefficient
-    static CCamera eye; // Eye casting rays
 
 public:
     void SetPower(float p);
     void SetReflect(float r);
-    static void SetCast(CCamera& camera);
-    static SRay BuildRay(float x, float y);
+    static SRay BuildRay(float x, float y, CCamera& camera); // #ASU here. remove static. do witho
 
 public:
 

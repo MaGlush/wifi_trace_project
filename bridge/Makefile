@@ -34,6 +34,7 @@ ASSIMP_LOCATION = $(EXTERNALS_BASEDIR)/assimp
 assimp:
 	cp -r $(ASSIMP_LOCATION)/include/* $(INCLUDE_DIR)
 	cp -r $(ASSIMP_LOCATION)/lib/* $(LIBRARY_DIR)
+	cp -r $(EXTERNALS_BASEDIR)/inih/ $(INCLUDE_DIR)
 
 # Argvparser library
 # Path to Argvparser library
