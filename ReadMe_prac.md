@@ -1,23 +1,27 @@
 # Практикум 3 
 
-Работу выполнила Глущенко Майя, 320
+Работу выполнила Глущенко Майя, 322
 
 # С использованием OpenMP
+Проверяла на config1.ini
 
-    CPU Time : Time [] seconds
-    real:    []
+	CPU runtime : Time [35.769] seconds
+
+	real	0m22.764s
+
 
 # Без OpenMP
 
-    CPU Time : Time [] seconds
-    real    []
+	CPU runtime : Time [36.113] seconds
+
+	real	0m36.540s
+
 
 # Собранные файлы 
 
-    cd bin/bin
-    time ./OpenMP
+Расположены в bin/bin
 
 # Система
 
     Ubuntu 16.04
-    System: Intel [процессор] []GHz, 4Gb
+    System: Intel(R) Pentium(R) 3805U @ 1.90GHz, 4Gb

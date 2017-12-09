@@ -194,7 +194,7 @@ void CTracer::RenderScene(int width, int height){
         int part = p10;
         int progress = 0;
         uint i,j;
-        #pragma omp parallel for private(i,j)
+        // #pragma omp parallel for private(i,j)
         for(i = 0; i < res_image.n_rows; i++)
             for(j = 0; j < res_image.n_cols; j++){	
                 SRay ray = BuildRay(j, i, current_camera);
@@ -202,7 +202,7 @@ void CTracer::RenderScene(int width, int height){
                     // progress bar 
                 if ( (i*height+j)%part == 0){
                     cerr << progress << "\%\n"; 
-                    #pragma omp critical
+                    // #pragma omp critical
                     progress += 10;
                 }
             }
