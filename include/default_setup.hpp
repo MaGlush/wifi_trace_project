@@ -3,6 +3,7 @@
 #include "includes.hpp"
 #include "geometry.hpp"
 #include "scene.hpp"
+#include "tracing.hpp"
 
 void default_run()
 {

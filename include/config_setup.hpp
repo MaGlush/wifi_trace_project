@@ -477,23 +477,29 @@ int ini_parse_string(const char* string, ini_handler handler, void* user) {
                             user);
 }
 
+#include "includes.hpp"
+#include "geometry.hpp"
+#include "scene.hpp"
+#include "tracing.hpp"
+
 
 int config_run(const string path) {
 
-    INIReader reader("../data/config/config.ini");
+    INIReader reader(path);
 
     if (reader.ParseError() < 0) {
-        std::cout << "Can't load 'config.ini'\n";
+        cout << "Can't load 'config.ini'\n";
         return 1;
     }
 
     // [scene]
     int width = reader.GetInteger("scene", "width", -1);
-    int height=reader.GetInteger("scene", "height", -1); 
-    cout << "w =" << width << endl; 
-    cout << "h =" << height << endl; 
+    int height = reader.GetInteger("scene", "height", -1); 
     string model_path = reader.Get("scene", "model", "no");
-    cout << "Model path=" <<  model_path << endl;
+    if (width < 0 || height < 0 || model_path == "no"){
+        cout << "Parse error : [scene] : " << path << endl;
+        return 1;
+    }  
     // [router]
     float px = reader.GetReal("router", "px", 0);
     float py = reader.GetReal("router", "py", 0);
@@ -503,27 +509,58 @@ int config_run(const string path) {
     float cy = reader.GetReal("router", "cy", 0);
     float cz = reader.GetReal("router", "cz", 0);
     float power = reader.GetReal("router","power",0);
+    if (power == 0){
+        cout << "Parse error : [router] : " << path << endl;
+        return 1;
+    }
+    SWifiRouter router(vec3(px, py, pz), radius, vec3(cx, cy, cz), power);    
     // [camera 1]
     px = reader.GetReal("camera_1", "px", 0);
     py = reader.GetReal("camera_1", "py", 0);
     pz = reader.GetReal("camera_1", "pz", 0);
     string orientation = reader.Get("camera_1", "orientation", "no");
+    if (orientation == "no"){
+        cout << "Parse error : [camera] : " << path << endl;
+        return 1;
+    }
+    CCamera cam1(vec3(px, py, pz), orientation);
     // [camera 2]
     px = reader.GetReal("camera_2", "px", 0);
     py = reader.GetReal("camera_2", "py", 0);
     pz = reader.GetReal("camera_2", "pz", 0); 
     orientation = reader.Get("camera_2", "orientation", "no");
+    CCamera cam2(vec3(px, py, pz), orientation);    
     // [light 1]
     px = reader.GetReal("light_1", "px", 0);
     py = reader.GetReal("light_1", "py", 0);
     pz = reader.GetReal("light_1", "pz", 0);
     float intesity = reader.GetReal("light_1","intesity",0);
+    SLight light1(vec3(px, py, pz), intesity);
     // [light_2]
     px = reader.GetReal("light_2","px",0);
     py = reader.GetReal("light_2","py",0);
     pz = reader.GetReal("light_2","pz",0);
     intesity = reader.GetReal("light_2","intesity",0);
+    SLight light2(vec3(px, py, pz), intesity);
 
+        
+        /* Model setting up */
+    CModel model(model_path.c_str());
+    CVoxelGrid grid(model.left_top_near, model.right_bot_far);
+    grid.Init(); 
+
+        /* Scene init */
+    CTracer tracer(model, grid);
+
+    tracer.PlaceRouter(router);
+
+    tracer.lights.push_back(light1);
+    tracer.lights.push_back(light2);
+    tracer.cameras.push_back(cam1);
+    if (orientation != "no")
+        tracer.cameras.push_back(cam2);
+    
+    tracer.RenderScene(width, height);
 
     return 0;
 }

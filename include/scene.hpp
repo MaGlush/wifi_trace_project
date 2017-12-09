@@ -3,7 +3,6 @@
 #include "includes.hpp"
 #include "camera.hpp"
 #include "geometry.hpp"
-// #include "triangle.hpp"
 
 struct SLight 
 {
