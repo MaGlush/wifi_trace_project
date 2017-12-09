@@ -14,20 +14,17 @@ void CCamera::SetDirection(const vec3 Pos, const string Orient, float FOV){
         left = vec3(0.0f, 0.0f, -1.0f);
         right = vec3(1.0f, 0.0f, 0.0f);
     }else if(orientation == "leftbot"){
-        left = vec3(0.0f, 0.0f, -1.0f);
-        right = vec3(1.0f, 1.0f, 0.0f);
-        // right = vec3();                                              /*#ASU NEED FILL, GEOMETRY*/
+        left = vec3(0.5f, 1.0f, 0.0f);
+        right = vec3(0.5f, 0.0f, 1.0f);
     }else if(orientation == "rightbot"){
-        left = vec3(0.0f, 0.0f, -1.0f);
-        right = vec3(-1.0f, 1.0f, 0.0f);
+        left = vec3(0.0f, 1.0f, 0.0f);
+        right = vec3(1.0f, 0.0f, 0.0f);
     }else if(orientation == "lefttop"){
         left = vec3(1.0f, 1.0f, 0.0f);
         right = vec3(0.0f, 0.0f, 1.0f);
-        // right = vec3();
     }else if(orientation == "righttop"){
         left = vec3(0.0f, 0.0f, 1.0f);
         right = vec3(-1.0f, 1.0f, 0.0f);
-        // right = vec3();
     }
     front = glm::normalize(glm::cross(left, right)); // vectors multiply, cross product
 }
