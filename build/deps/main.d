@@ -108,4 +108,4 @@ build/obj/main.o build/deps/main.d: src/main.cpp include/includes.hpp \
  bridge/include/EasyBMP_VariousBMPutilities.h include/Environment.h \
  include/Timer.h include/tracing.hpp include/scene.hpp include/camera.hpp \
  include/geometry.hpp include/ray.hpp include/voxelgrid.hpp \
- include/default_setup.hpp
+ include/default_setup.hpp include/config_setup.hpp

@@ -63,13 +63,29 @@ std::tuple<uint,uint,uint> CTracer::vec3_to_color(vec3 vector){
     return std::make_tuple(x, y, z);
 }
 
+vec3 ColorScheme(float value){
+    if(value < EPS) {
+            return glm::vec3(0.0f,0.0f,0.0f);
+        }
+    float log_value = log10(value);
+    log_value = log_value * 10.0f;
+
+    float k2 = (log_value + 80.0f) / 100.0f;
+    if(k2 > 1.0f)
+        k2 = 1.0f;
+    float k1 = 1.0f - k2;
+    
+    return glm::normalize(glm::vec3(0.0f,0.0f,100.0f) * k1 + glm::vec3(13.0f,0.0f,0.0f) * k2);
+}
+
 vec3 CTracer::RayMarcher(const SRay& ray, vec3 color){
     float depth = 0.0f;
     float step = 0.005;
     int idx;
     int p_idx;
+    ssize_t march_num = 0;
     bool first = true;
-    float alpha = 0.04f;
+    float alpha = 0.2f;
     vec3 routerColor = vec3(0.0f,0.0f,0.0f);
     for(int i = 0; i < MAX_MARCH_STEPS; i++){
         vec3 p = ray.origin + 
@@ -88,15 +104,19 @@ vec3 CTracer::RayMarcher(const SRay& ray, vec3 color){
                 continue;
             }
         }
-        if(idx>0){
+        if(idx > 0){
+            march_num++;
             float value = vox_grid.voxels[idx].value;
-            routerColor += vec3(value/30.0f, value/7.0f, value/100.0f);
-            routerColor = min(vec3(255.0f,200.0f,100.0f), routerColor);
+            routerColor += ColorScheme(value);
+            //routerColor += vec3(value/30.0f, value/7.0f, value/100.0f);
+            //routerColor = min(vec3(255.0f,200.0f,100.0f), routerColor);
 
-            color =  color * (1 - alpha) + routerColor*alpha;
         }
         else{ // out of vox_grid
-            return color;
+            if (march_num)
+                return color * (1 - alpha) + routerColor*(255.0f/march_num)*alpha;
+            else
+                return color;
         }
     }
 
@@ -144,7 +164,7 @@ tuple3uint CTracer::RayTracer(const SRay& ray){
             float dif = glm::dot(lightdir, normal);
             if(dif < 0.0f) 
                 continue;
-            SRay eye(point, ray.origin - point); // #ASU here. change color calculation.
+            SRay eye(point, ray.origin - point); 
             vec3 phong_color = lights[k].PhongShade(vec3(0.1f, 0.1f, 0.1f), // ambient reflection constant
                                                     objects[index_near]->color*0.7f, // diffuse reflection constant
                                                     vec3(0.1f, 0.1f, 0.1f), // specular reflection constant
@@ -152,7 +172,7 @@ tuple3uint CTracer::RayTracer(const SRay& ray){
                                                     normal, 
                                                     point,
                                                     current_camera);
-            phong_color = min(vec3(255.0f, 255.0f, 255.0f), phong_color);
+            // phong_color = min(vec3(255.0f, 255.0f, 255.0f), phong_color);
             res_color += RayMarcher(eye, phong_color);
         }
         res_color = min(vec3(255.0f, 255.0f, 255.0f), res_color);
